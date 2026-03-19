@@ -1,0 +1,9 @@
+
+# FVM Version Cache
+.fvm/
+.dart_tool
+.fvmrc
+pubspec.lock
+example/.flutter-plugins-dependencies
+example/android/local.properties
+.vscode/settings.json
