@@ -5,9 +5,11 @@
 package io.flutter.plugins.videoplayer;
 
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
 
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
@@ -111,5 +113,45 @@ public final class ExoPlayerEventListenerTest {
 
     eventListener.onIsPlayingChanged(false);
     verify(mockCallbacks).onIsPlayingStateUpdate(false);
+  }
+
+  @Test
+  public void onIsPlayingFalseSuppressedWhenPlayWhenReadyTrue() {
+    // Simulate seek while playing: isPlaying goes false but playWhenReady is still true.
+    when(mockExoPlayer.getPlayWhenReady()).thenReturn(true);
+
+    eventListener.onIsPlayingChanged(false);
+    verify(mockCallbacks, never()).onIsPlayingStateUpdate(false);
+  }
+
+  @Test
+  public void onIsPlayingTrueSentAfterSuppression() {
+    // Simulate seek while playing: suppress false, then true arrives when seek completes.
+    when(mockExoPlayer.getPlayWhenReady()).thenReturn(true);
+
+    eventListener.onIsPlayingChanged(false);
+    eventListener.onIsPlayingChanged(true);
+
+    verify(mockCallbacks, never()).onIsPlayingStateUpdate(false);
+    verify(mockCallbacks).onIsPlayingStateUpdate(true);
+  }
+
+  @Test
+  public void onPlayWhenReadyChangedSendsPauseDuringSuppression() {
+    // Simulate user pausing during seek: isPlaying was suppressed, then playWhenReady goes false.
+    when(mockExoPlayer.getPlayWhenReady()).thenReturn(true);
+
+    eventListener.onIsPlayingChanged(false);
+    verify(mockCallbacks, never()).onIsPlayingStateUpdate(false);
+
+    eventListener.onPlayWhenReadyChanged(false, Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST);
+    verify(mockCallbacks).onIsPlayingStateUpdate(false);
+  }
+
+  @Test
+  public void onPlayWhenReadyChangedNoOpWhenNotSuppressed() {
+    // When not in suppressed state, onPlayWhenReadyChanged should not send any isPlaying event.
+    eventListener.onPlayWhenReadyChanged(false, Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST);
+    verify(mockCallbacks, never()).onIsPlayingStateUpdate(false);
   }
 }

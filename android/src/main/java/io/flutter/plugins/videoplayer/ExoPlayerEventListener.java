@@ -14,6 +14,7 @@ import androidx.media3.exoplayer.ExoPlayer;
 
 public abstract class ExoPlayerEventListener implements Player.Listener {
   private boolean isInitialized = false;
+  private boolean isPlayingSuppressed = false;
   protected final ExoPlayer exoPlayer;
   protected final VideoPlayerCallbacks events;
 
@@ -89,7 +90,24 @@ public abstract class ExoPlayerEventListener implements Player.Listener {
 
   @Override
   public void onIsPlayingChanged(boolean isPlaying) {
+    // During seek (or buffering) while playing, ExoPlayer temporarily reports
+    // isPlaying=false even though playWhenReady remains true. Suppress that
+    // transient event so the Dart side doesn't see a spurious pause/resume.
+    if (!isPlaying && exoPlayer.getPlayWhenReady()) {
+      isPlayingSuppressed = true;
+      return;
+    }
+    isPlayingSuppressed = false;
     events.onIsPlayingStateUpdate(isPlaying);
+  }
+
+  @Override
+  public void onPlayWhenReadyChanged(boolean playWhenReady, int reason) {
+    if (isPlayingSuppressed && !playWhenReady) {
+      // User intentionally paused while we were suppressing isPlaying events.
+      isPlayingSuppressed = false;
+      events.onIsPlayingStateUpdate(false);
+    }
   }
 
   @Override
