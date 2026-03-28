@@ -7,6 +7,7 @@ package io.flutter.plugins.videoplayer;
 import static androidx.media3.common.Player.REPEAT_MODE_ALL;
 import static androidx.media3.common.Player.REPEAT_MODE_OFF;
 
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
@@ -30,6 +31,7 @@ import java.util.List;
  * <p>It provides methods to control playback, adjust volume, and handle seeking.
  */
 public abstract class VideoPlayer implements VideoPlayerInstanceApi {
+  @NonNull protected final Context context;
   @NonNull protected final VideoPlayerCallbacks videoPlayerEvents;
   @Nullable protected final SurfaceProducer surfaceProducer;
   @Nullable private DisposeHandler disposeHandler;
@@ -59,11 +61,13 @@ public abstract class VideoPlayer implements VideoPlayerInstanceApi {
   // Keeping behavior as-is and addressing the warning could cause a regression: https://github.com/flutter/packages/pull/10193
   @SuppressWarnings("this-escape")
   public VideoPlayer(
+      @NonNull Context context,
       @NonNull VideoPlayerCallbacks events,
       @NonNull MediaItem mediaItem,
       @NonNull VideoPlayerOptions options,
       @Nullable SurfaceProducer surfaceProducer,
       @NonNull ExoPlayerProvider exoPlayerProvider) {
+    this.context = context;
     this.videoPlayerEvents = events;
     this.surfaceProducer = surfaceProducer;
     exoPlayer = exoPlayerProvider.get();
@@ -75,7 +79,7 @@ public abstract class VideoPlayer implements VideoPlayerInstanceApi {
 
     exoPlayer.setMediaItem(mediaItem);
     exoPlayer.prepare();
-    exoPlayer.addListener(createExoPlayerEventListener(exoPlayer, surfaceProducer));
+    exoPlayer.addListener(createExoPlayerEventListener(context, exoPlayer, surfaceProducer));
     setAudioAttributes(exoPlayer, options.mixWithOthers);
   }
 
@@ -85,7 +89,9 @@ public abstract class VideoPlayer implements VideoPlayerInstanceApi {
 
   @NonNull
   protected abstract ExoPlayerEventListener createExoPlayerEventListener(
-      @NonNull ExoPlayer exoPlayer, @Nullable SurfaceProducer surfaceProducer);
+      @NonNull Context context,
+      @NonNull ExoPlayer exoPlayer,
+      @Nullable SurfaceProducer surfaceProducer);
 
   private static void setAudioAttributes(ExoPlayer exoPlayer, boolean isMixMode) {
     exoPlayer.setAudioAttributes(

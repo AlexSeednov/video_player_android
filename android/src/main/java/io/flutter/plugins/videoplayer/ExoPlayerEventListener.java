@@ -4,17 +4,25 @@
 
 package io.flutter.plugins.videoplayer;
 
+import android.content.Context;
+import android.content.res.AssetFileDescriptor;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
+import android.util.Log;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.C;
+import androidx.media3.common.MediaItem;
 import androidx.media3.common.PlaybackException;
 import androidx.media3.common.Player;
 import androidx.media3.common.Tracks;
 import androidx.media3.exoplayer.ExoPlayer;
 
 public abstract class ExoPlayerEventListener implements Player.Listener {
+  private static final String TAG = "ExoPlayerEventListener";
   private boolean isInitialized = false;
   private boolean isPlayingSuppressed = false;
+  @NonNull protected final Context context;
   protected final ExoPlayer exoPlayer;
   protected final VideoPlayerCallbacks events;
 
@@ -45,12 +53,102 @@ public abstract class ExoPlayerEventListener implements Player.Listener {
   }
 
   public ExoPlayerEventListener(
-      @NonNull ExoPlayer exoPlayer, @NonNull VideoPlayerCallbacks events) {
+      @NonNull Context context,
+      @NonNull ExoPlayer exoPlayer,
+      @NonNull VideoPlayerCallbacks events) {
+    this.context = context;
     this.exoPlayer = exoPlayer;
     this.events = events;
   }
 
   protected abstract void sendInitialized();
+
+  /**
+   * Returns the most accurate duration available for the current media, in milliseconds.
+   *
+   * <p>For fragmented MP4 files that lack a {@code mehd} box, ExoPlayer may report only the
+   * duration from the {@code mvhd} atom, which corresponds to the init segment rather than the
+   * full video. This method uses {@link MediaMetadataRetriever} as a fallback for local playback
+   * and progressive HTTP(S) playback. Known streaming protocols such as HLS, DASH, and Smooth
+   * Streaming skip the extra metadata pass.
+   */
+  @SuppressWarnings("deprecation") // MediaMetadataRetriever.release() deprecated in API 29
+  protected long resolveAccurateDuration() {
+    long exoPlayerDuration = exoPlayer.getDuration();
+
+    MediaItem mediaItem = exoPlayer.getCurrentMediaItem();
+    if (mediaItem == null || mediaItem.localConfiguration == null) {
+      return exoPlayerDuration;
+    }
+
+    VideoAsset.DurationResolverOptions resolverOptions = null;
+    Object tag = mediaItem.localConfiguration.tag;
+    if (tag instanceof VideoAsset.DurationResolverOptions) {
+      resolverOptions = (VideoAsset.DurationResolverOptions) tag;
+      if (!resolverOptions.allowMetadataRetriever) {
+        return exoPlayerDuration;
+      }
+    }
+
+    Uri uri = mediaItem.localConfiguration.uri;
+    String scheme = uri.getScheme();
+    if (scheme == null) {
+      return exoPlayerDuration;
+    }
+
+    MediaMetadataRetriever retriever = new MediaMetadataRetriever();
+    try {
+      switch (scheme) {
+        case "file":
+          retriever.setDataSource(uri.getPath());
+          break;
+        case "content":
+          retriever.setDataSource(context, uri);
+          break;
+        case "asset":
+          String assetPath = uri.getPath();
+          if (assetPath == null || assetPath.isEmpty()) {
+            return exoPlayerDuration;
+          }
+          if (assetPath != null && assetPath.startsWith("/")) {
+            assetPath = assetPath.substring(1);
+          }
+          try (AssetFileDescriptor afd = context.getAssets().openFd(assetPath)) {
+            retriever.setDataSource(
+                afd.getFileDescriptor(), afd.getStartOffset(), afd.getLength());
+          }
+          break;
+        case "http":
+        case "https":
+          if (resolverOptions == null) {
+            return exoPlayerDuration;
+          }
+          retriever.setDataSource(uri.toString(), resolverOptions.httpHeaders);
+          break;
+        default:
+          return exoPlayerDuration;
+      }
+
+      String durationStr =
+          retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION);
+      if (durationStr != null) {
+        long retrievedDuration = Long.parseLong(durationStr);
+        if (retrievedDuration > 0) {
+          return retrievedDuration;
+        }
+      }
+    } catch (Exception e) {
+      Log.w(TAG, "Falling back to ExoPlayer duration for " + uri, e);
+    } finally {
+      try {
+        retriever.release();
+      } catch (Exception e) {
+        // Ignore release errors.
+      }
+    }
+
+    return exoPlayerDuration;
+  }
 
   @Override
   public void onPlaybackStateChanged(final int playbackState) {

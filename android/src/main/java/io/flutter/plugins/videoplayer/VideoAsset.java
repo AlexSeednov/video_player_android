@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.MediaItem;
 import androidx.media3.exoplayer.source.MediaSource;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -63,6 +64,53 @@ public abstract class VideoAsset {
 
   protected VideoAsset(@Nullable String assetUrl) {
     this.assetUrl = assetUrl;
+  }
+
+  static final class DurationResolverOptions {
+    private static final String USER_AGENT_HEADER = "User-Agent";
+
+    @NonNull final Map<String, String> httpHeaders;
+    final boolean allowMetadataRetriever;
+
+    private DurationResolverOptions(
+        @NonNull Map<String, String> httpHeaders, boolean allowMetadataRetriever) {
+      this.httpHeaders = httpHeaders;
+      this.allowMetadataRetriever = allowMetadataRetriever;
+    }
+
+    @NonNull
+    static DurationResolverOptions forLocalPlayback() {
+      return new DurationResolverOptions(Collections.emptyMap(), true);
+    }
+
+    @NonNull
+    static DurationResolverOptions forRemotePlayback(
+        @NonNull StreamingFormat streamingFormat,
+        @NonNull Map<String, String> httpHeaders,
+        @Nullable String userAgent) {
+      if (streamingFormat != StreamingFormat.UNKNOWN) {
+        return new DurationResolverOptions(Collections.emptyMap(), false);
+      }
+
+      Map<String, String> metadataHeaders = new HashMap<>(httpHeaders);
+      if (userAgent != null
+          && !userAgent.isEmpty()
+          && !containsHeader(metadataHeaders, USER_AGENT_HEADER)) {
+        metadataHeaders.put(USER_AGENT_HEADER, userAgent);
+      }
+      return new DurationResolverOptions(
+          Collections.unmodifiableMap(metadataHeaders), /* allowMetadataRetriever= */ true);
+    }
+
+    private static boolean containsHeader(
+        @NonNull Map<String, String> headers, @NonNull String headerName) {
+      for (String key : headers.keySet()) {
+        if (key.equalsIgnoreCase(headerName)) {
+          return true;
+        }
+      }
+      return false;
+    }
   }
 
   /**

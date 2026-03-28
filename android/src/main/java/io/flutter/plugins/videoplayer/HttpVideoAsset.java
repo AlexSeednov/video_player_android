@@ -39,6 +39,9 @@ final class HttpVideoAsset extends VideoAsset {
   @Override
   public MediaItem getMediaItem() {
     MediaItem.Builder builder = new MediaItem.Builder().setUri(assetUrl);
+    builder.setTag(
+        VideoAsset.DurationResolverOptions.forRemotePlayback(
+            streamingFormat, httpHeaders, userAgent));
     String mimeType = null;
     switch (streamingFormat) {
       case SMOOTH:

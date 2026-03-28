@@ -4,6 +4,7 @@
 
 package io.flutter.plugins.videoplayer.texture;
 
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.media3.common.Format;
@@ -17,10 +18,11 @@ public final class TextureExoPlayerEventListener extends ExoPlayerEventListener 
   private final boolean surfaceProducerHandlesCropAndRotation;
 
   public TextureExoPlayerEventListener(
+      @NonNull Context context,
       @NonNull ExoPlayer exoPlayer,
       @NonNull VideoPlayerCallbacks events,
       boolean surfaceProducerHandlesCropAndRotation) {
-    super(exoPlayer, events);
+    super(context, exoPlayer, events);
     this.surfaceProducerHandlesCropAndRotation = surfaceProducerHandlesCropAndRotation;
   }
 
@@ -48,7 +50,7 @@ public final class TextureExoPlayerEventListener extends ExoPlayerEventListener 
         }
       }
     }
-    events.onInitialized(width, height, exoPlayer.getDuration(), rotationCorrection.getDegrees());
+    events.onInitialized(width, height, resolveAccurateDuration(), rotationCorrection.getDegrees());
   }
 
   @OptIn(markerClass = androidx.media3.common.util.UnstableApi.class)

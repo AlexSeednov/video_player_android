@@ -13,6 +13,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
 
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.media3.common.AudioAttributes;
@@ -41,6 +42,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 import org.robolectric.RobolectricTestRunner;
+import org.robolectric.RuntimeEnvironment;
 
 /**
  * Unit tests for {@link VideoPlayer}.
@@ -74,15 +76,23 @@ public final class VideoPlayerTest {
         @NonNull VideoPlayerOptions options,
         @Nullable SurfaceProducer surfaceProducer,
         @NonNull ExoPlayerProvider exoPlayerProvider) {
-      super(events, mediaItem, options, surfaceProducer, exoPlayerProvider);
+      super(
+          RuntimeEnvironment.getApplication(),
+          events,
+          mediaItem,
+          options,
+          surfaceProducer,
+          exoPlayerProvider);
     }
 
     @NonNull
     @Override
     protected ExoPlayerEventListener createExoPlayerEventListener(
-        @NonNull ExoPlayer exoPlayer, @Nullable SurfaceProducer surfaceProducer) {
+        @NonNull Context context,
+        @NonNull ExoPlayer exoPlayer,
+        @Nullable SurfaceProducer surfaceProducer) {
       // Use platform view implementation for testing.
-      return new PlatformViewExoPlayerEventListener(exoPlayer, mockEvents);
+      return new PlatformViewExoPlayerEventListener(context, exoPlayer, mockEvents);
     }
   }
 

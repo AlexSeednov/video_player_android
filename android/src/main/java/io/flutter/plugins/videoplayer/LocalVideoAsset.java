@@ -20,7 +20,10 @@ final class LocalVideoAsset extends VideoAsset {
   @NonNull
   @Override
   public MediaItem getMediaItem() {
-    return new MediaItem.Builder().setUri(assetUrl).build();
+    return new MediaItem.Builder()
+        .setUri(assetUrl)
+        .setTag(VideoAsset.DurationResolverOptions.forLocalPlayback())
+        .build();
   }
 
   @OptIn(markerClass = UnstableApi.class)

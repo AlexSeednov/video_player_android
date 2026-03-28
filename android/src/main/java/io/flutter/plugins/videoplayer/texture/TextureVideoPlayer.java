@@ -50,6 +50,7 @@ public final class TextureVideoPlayer extends VideoPlayer implements SurfaceProd
       @NonNull VideoAsset asset,
       @NonNull VideoPlayerOptions options) {
     return new TextureVideoPlayer(
+        context,
         events,
         surfaceProducer,
         asset.getMediaItem(),
@@ -69,12 +70,13 @@ public final class TextureVideoPlayer extends VideoPlayer implements SurfaceProd
   @UnstableApi
   @VisibleForTesting
   public TextureVideoPlayer(
+      @NonNull Context context,
       @NonNull VideoPlayerCallbacks events,
       @NonNull SurfaceProducer surfaceProducer,
       @NonNull MediaItem mediaItem,
       @NonNull VideoPlayerOptions options,
       @NonNull ExoPlayerProvider exoPlayerProvider) {
-    super(events, mediaItem, options, surfaceProducer, exoPlayerProvider);
+    super(context, events, mediaItem, options, surfaceProducer, exoPlayerProvider);
 
     surfaceProducer.setCallback(this);
 
@@ -86,14 +88,16 @@ public final class TextureVideoPlayer extends VideoPlayer implements SurfaceProd
   @NonNull
   @Override
   protected ExoPlayerEventListener createExoPlayerEventListener(
-      @NonNull ExoPlayer exoPlayer, @Nullable SurfaceProducer surfaceProducer) {
+      @NonNull Context context,
+      @NonNull ExoPlayer exoPlayer,
+      @Nullable SurfaceProducer surfaceProducer) {
     if (surfaceProducer == null) {
       throw new IllegalArgumentException(
           "surfaceProducer cannot be null to create an ExoPlayerEventListener for TextureVideoPlayer.");
     }
     boolean surfaceProducerHandlesCropAndRotation = surfaceProducer.handlesCropAndRotation();
     return new TextureExoPlayerEventListener(
-        exoPlayer, videoPlayerEvents, surfaceProducerHandlesCropAndRotation);
+        context, exoPlayer, videoPlayerEvents, surfaceProducerHandlesCropAndRotation);
   }
 
   @RestrictTo(RestrictTo.Scope.LIBRARY)

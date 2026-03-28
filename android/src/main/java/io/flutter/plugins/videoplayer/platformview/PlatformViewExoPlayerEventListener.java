@@ -4,6 +4,7 @@
 
 package io.flutter.plugins.videoplayer.platformview;
 
+import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.OptIn;
 import androidx.media3.common.Format;
@@ -15,8 +16,10 @@ import java.util.Objects;
 
 public final class PlatformViewExoPlayerEventListener extends ExoPlayerEventListener {
   public PlatformViewExoPlayerEventListener(
-      @NonNull ExoPlayer exoPlayer, @NonNull VideoPlayerCallbacks events) {
-    super(exoPlayer, events);
+      @NonNull Context context,
+      @NonNull ExoPlayer exoPlayer,
+      @NonNull VideoPlayerCallbacks events) {
+    super(context, exoPlayer, events);
   }
 
   @OptIn(markerClass = UnstableApi.class)
@@ -40,6 +43,6 @@ public final class PlatformViewExoPlayerEventListener extends ExoPlayerEventList
       rotationCorrection = RotationDegrees.fromDegrees(0);
     }
 
-    events.onInitialized(width, height, exoPlayer.getDuration(), rotationCorrection.getDegrees());
+    events.onInitialized(width, height, resolveAccurateDuration(), rotationCorrection.getDegrees());
   }
 }
