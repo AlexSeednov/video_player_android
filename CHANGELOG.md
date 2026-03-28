@@ -1,3 +1,11 @@
+## 2.9.3+2 - Forked
+
+* Fixes an issue where an incorrect extractor could be selected for fMP4 files.
+
+## 2.9.3+1 - Forked
+
+* Fixes seeking behavior so that the player no longer sends pause events at the start of a seek.
+
 ## 2.9.3
 
 * Updates `androidx.media3` to 1.9.1.

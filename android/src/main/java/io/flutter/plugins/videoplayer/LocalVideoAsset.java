@@ -6,7 +6,9 @@ package io.flutter.plugins.videoplayer;
 
 import android.content.Context;
 import androidx.annotation.NonNull;
+import androidx.annotation.OptIn;
 import androidx.media3.common.MediaItem;
+import androidx.media3.common.util.UnstableApi;
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory;
 import androidx.media3.exoplayer.source.MediaSource;
 
@@ -21,9 +23,10 @@ final class LocalVideoAsset extends VideoAsset {
     return new MediaItem.Builder().setUri(assetUrl).build();
   }
 
+  @OptIn(markerClass = UnstableApi.class)
   @NonNull
   @Override
   public MediaSource.Factory getMediaSourceFactory(@NonNull Context context) {
-    return new DefaultMediaSourceFactory(context);
+    return new DefaultMediaSourceFactory(context, new Fmp4PrioritizingExtractorsFactory());
   }
 }
