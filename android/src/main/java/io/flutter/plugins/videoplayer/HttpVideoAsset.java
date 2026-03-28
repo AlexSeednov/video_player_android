@@ -80,7 +80,7 @@ final class HttpVideoAsset extends VideoAsset {
       Context context, DefaultHttpDataSource.Factory initialFactory) {
     unstableUpdateDataSourceFactory(initialFactory, httpHeaders, userAgent);
     DataSource.Factory dataSourceFactory = new DefaultDataSource.Factory(context, initialFactory);
-    return new DefaultMediaSourceFactory(context, new Fmp4PrioritizingExtractorsFactory())
+    return new DefaultMediaSourceFactory(context, VideoPlayerExtractorsFactory.create())
         .setDataSourceFactory(dataSourceFactory);
   }
 
