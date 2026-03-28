@@ -1,3 +1,7 @@
+## 2.9.3+1 - Forked
+
+* Fixes seeking behavior so that the player no longer sends pause events at the start of a seek.
+
 ## 2.9.3
 
 * Updates `androidx.media3` to 1.9.1.
